@@ -66,5 +66,39 @@ class TestValue:
     assert isinstance(binary_loss, Value)
     assert binary_loss.value == pytest.approx(2.302585092994046)
     assert binary_loss.value != pytest.approx(0.5)
+  
+  def test_backpropagation(self):
+    x_var = Value(1)
+    w_var = Value(0.5)
+    b_var = Value(0.1)
+    wx = w_var * x_var
+    z_var = wx + b_var
+    activation = z_var.sigmoid()
+    y_true = Value(1)
+    loss = activation.binary_loss(y_true.value)
+    loss.backward()
 
+    # compute the same loss function with tiny increment h
+    h_var = Value(0.00001)
+    x_h = Value(1)
+    w_h = Value(w_var.value + h_var.value)
+    b_h = Value(0.1)
+    w_hx_h = w_h * x_h
+    z_h = w_hx_h + b_h
+    activation_h = z_h.sigmoid()
+    y_true = Value(1)
+    loss_h = activation_h.binary_loss(y_true.value)
+    gradient = (loss_h.value - loss.value) / h_var.value
 
+    assert gradient == pytest.approx(w_var.grad_value, 0.0001)
+  
+  def test_update(self):
+    x_var = Value(1)
+    w_var = Value(0.5)
+    b_var = Value(0.1)
+    wx = w_var * x_var
+    z_var = wx + b_var
+    activation = z_var.sigmoid()
+    y_true = Value(1)
+    loss = activation.binary_loss(y_true.value)
+    loss.backward()
